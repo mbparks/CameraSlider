@@ -1,16 +1,24 @@
 #include <AccelStepper.h>
 #include <AFMotor.h>
 
-//For Linear Motion Stepper
 #define stepsPerRev 200
-#define stepsPerLoop 1
 
+//For Linear Motion Stepper
+#define farLeftLinearPosition 100000
+#define farRightLinearPosition -1000000
+
+//For Rotate Motion Stepper
+#define farLeftRotatePosition -10000000
+#define farRightRotatePosition 1000000
+
+#define delayVal 1000
 
 //Button and Switch Pin Assignments
 #define leftLimitSwitch 11
 #define rightLimitSwitch 13
 #define startButton 9
 #define rotateButton 10
+
 
 enum linearStates {
   unknown, movingLeft, movingRight, farLeft, farRight
@@ -68,11 +76,11 @@ void setup() {
 
   linearStepper.setMaxSpeed(100.0);
   linearStepper.setAcceleration(50.0);
-  linearStepper.moveTo(1000000);
+  linearStepper.moveTo(farLeftLinearPosition);
     
   rotateStepper.setMaxSpeed(100.0);
   rotateStepper.setAcceleration(50.0);
-  rotateStepper.moveTo(1000000);
+  rotateStepper.moveTo(farRightRotatePosition);
 
   pinMode(leftLimitSwitch, INPUT_PULLUP);
   pinMode(rightLimitSwitch, INPUT_PULLUP);
@@ -88,7 +96,6 @@ void setup() {
 
 
 void loop() {
-
   startButtonNotPressed = digitalRead(startButton);
   rotateButtonNotPressed = digitalRead(rotateButton);
   while (startButtonNotPressed == true && rotateButtonNotPressed == true) {
@@ -101,12 +108,12 @@ void loop() {
     switch (currentLinearState) {
       case farLeft:
         moveToFarRight(doRotate);
-        delay(1000);
+        delay(delayVal);
         break;
 
       case farRight:
         moveToFarLeft(doRotate);
-        delay(1000);
+        delay(delayVal);
         break;
 
       default:
@@ -151,10 +158,9 @@ void displayLinearMotorStatus() {
 
 
 void moveToFarLeft(bool rotateCamera) {
-  linearStepper.moveTo(100000);
+  linearStepper.moveTo(farLeftLinearPosition);
   currentLinearState = movingLeft;
   displayLinearMotorStatus();
-  //linearStepper.enableOutputs();
   leftSwitchNotPressed = digitalRead(leftLimitSwitch);
   
   while (leftSwitchNotPressed == true) {
@@ -167,17 +173,15 @@ void moveToFarLeft(bool rotateCamera) {
 
   currentLinearState = farLeft;
   linearStepper.moveTo(linearStepper.currentPosition());
-  //linearStepper.disableOutputs();
   displayLinearMotorStatus();
 }
 
 
 
 void moveToFarRight(bool rotateCamera) {
-  linearStepper.moveTo(-1000000);
+  linearStepper.moveTo(farRightLinearPosition);
   currentLinearState = movingRight;
   displayLinearMotorStatus();
-  //linearStepper.enableOutputs();
   rightSwitchNotPressed = digitalRead(rightLimitSwitch);
   
   while (rightSwitchNotPressed == true) {
@@ -191,24 +195,19 @@ void moveToFarRight(bool rotateCamera) {
 
   currentLinearState = farRight;
   linearStepper.moveTo(linearStepper.currentPosition());
-  //linearStepper.disableOutputs();
   displayLinearMotorStatus();
 }
 
 
 
 void rotatePlatformLeft() {
-  //rotateStepper.enableOutputs();
-  rotateStepper.move(-10000000);
+  rotateStepper.move(farLeftRotatePosition);
   rotateStepper.run();
-  //rotateStepper.disableOutputs();
 }
 
 
 void rotatePlatformRight() {
-  //rotateStepper.enableOutputs();
-  rotateStepper.move(1000000);
+  rotateStepper.move(farRightRotatePosition);
   rotateStepper.run();
-  //rotateStepper.disableOutputs();
 }
 
