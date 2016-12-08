@@ -4,7 +4,7 @@
 #define stepsPerRev 200
 
 //For Linear Motion Stepper
-#define farLeftLinearPosition 100000
+#define farLeftLinearPosition 1000000
 #define farRightLinearPosition -1000000
 
 //For Rotate Motion Stepper
@@ -74,12 +74,12 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Camera Motion Project");
 
-  linearStepper.setMaxSpeed(100.0);
-  linearStepper.setAcceleration(50.0);
+  linearStepper.setMaxSpeed(200.0);
+  linearStepper.setAcceleration(100.0);
   linearStepper.moveTo(farLeftLinearPosition);
     
-  rotateStepper.setMaxSpeed(100.0);
-  rotateStepper.setAcceleration(50.0);
+  rotateStepper.setMaxSpeed(200.0);
+  rotateStepper.setAcceleration(100.0);
   rotateStepper.moveTo(farRightRotatePosition);
 
   pinMode(leftLimitSwitch, INPUT_PULLUP);
@@ -210,4 +210,3 @@ void rotatePlatformRight() {
   rotateStepper.move(farRightRotatePosition);
   rotateStepper.run();
 }
-
