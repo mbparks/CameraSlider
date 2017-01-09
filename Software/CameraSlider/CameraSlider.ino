@@ -14,11 +14,10 @@
 #define delayVal 1000
 
 //Button and Switch Pin Assignments
-#define leftLimitSwitch 11
+#define leftLimitSwitch 10
 #define rightLimitSwitch 13
-#define startButton 9
-#define rotateButton 10
-
+#define redButton 9    // move and rotate
+#define blackButton 11   // move and do NOT rotate
 
 enum linearStates {
   unknown, movingLeft, movingRight, farLeft, farRight
@@ -42,17 +41,17 @@ AF_Stepper rotateMotor(stepsPerRev, 2);
 
 // you can change these to DOUBLE or INTERLEAVE or MICROSTEP!
 // wrappers for the first motor!
-void forwardstep1() {  
+void forwardstep1() {
   linearMotor.onestep(FORWARD, DOUBLE);
 }
-void backwardstep1() {  
+void backwardstep1() {
   linearMotor.onestep(BACKWARD, DOUBLE);
 }
 // wrappers for the second motor!
-void forwardstep2() {  
+void forwardstep2() {
   rotateMotor.onestep(FORWARD, DOUBLE);
 }
-void backwardstep2() {  
+void backwardstep2() {
   rotateMotor.onestep(BACKWARD, DOUBLE);
 }
 
@@ -63,8 +62,8 @@ linearStates currentLinearState = unknown;
 
 bool leftSwitchNotPressed = true;
 bool rightSwitchNotPressed = true;
-bool startButtonNotPressed = true;
-bool rotateButtonNotPressed = true;
+bool redButtonNotPressed = true;
+bool blackButtonNotPressed = true;
 
 static bool doRotate = true;
 static bool doNotRotate = false;
@@ -74,37 +73,66 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Camera Motion Project");
 
-  linearStepper.setMaxSpeed(200.0);
-  linearStepper.setAcceleration(100.0);
+  linearStepper.setMaxSpeed(500.0);
+  linearStepper.setAcceleration(800.0);
   linearStepper.moveTo(farLeftLinearPosition);
-    
-  rotateStepper.setMaxSpeed(200.0);
-  rotateStepper.setAcceleration(100.0);
+
+  rotateStepper.setMaxSpeed(50.0);
+  rotateStepper.setAcceleration(50.0);
   rotateStepper.moveTo(farRightRotatePosition);
 
   pinMode(leftLimitSwitch, INPUT_PULLUP);
   pinMode(rightLimitSwitch, INPUT_PULLUP);
-  pinMode(startButton, INPUT_PULLUP);
-  pinMode(rotateButton, INPUT_PULLUP);
+  pinMode(blackButton, INPUT_PULLUP);
+  pinMode(redButton, INPUT_PULLUP);
 
   Serial.println("Homing the linear motion platform...");
   moveToFarLeft(doNotRotate);
   Serial.println("Platform home. Waiting for button press...");
-  linearStepper.setCurrentPosition(0); 
+  linearStepper.setCurrentPosition(0);
 }
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 void loop() {
-  startButtonNotPressed = digitalRead(startButton);
-  rotateButtonNotPressed = digitalRead(rotateButton);
-  while (startButtonNotPressed == true && rotateButtonNotPressed == true) {
+  blackButtonNotPressed = digitalRead(blackButton);
+  redButtonNotPressed = digitalRead(redButton);
+  while (blackButtonNotPressed == true && redButtonNotPressed == true) {
     //displayLinearMotorStatus();
-    startButtonNotPressed = digitalRead(startButton);
-    rotateButtonNotPressed = digitalRead(rotateButton);
+    blackButtonNotPressed = digitalRead(blackButton);
+    redButtonNotPressed = digitalRead(redButton);
   }
 
-  if (startButtonNotPressed == false) {
+  if (blackButtonNotPressed == false) {
+    switch (currentLinearState) {
+      case farLeft:
+        moveToFarRight(doNotRotate);
+        delay(delayVal);
+        break;
+
+      case farRight:
+        moveToFarLeft(doNotRotate);
+        delay(delayVal);
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  if (redButtonNotPressed == false) {
     switch (currentLinearState) {
       case farLeft:
         moveToFarRight(doRotate);
@@ -119,11 +147,6 @@ void loop() {
       default:
         break;
     }
-  }
-
-  if (rotateButtonNotPressed == false) {
-    Serial.println("Rotating the camera platform");
-    rotatePlatformLeft();
   }
 }
 
@@ -162,7 +185,7 @@ void moveToFarLeft(bool rotateCamera) {
   currentLinearState = movingLeft;
   displayLinearMotorStatus();
   leftSwitchNotPressed = digitalRead(leftLimitSwitch);
-  
+
   while (leftSwitchNotPressed == true) {
     linearStepper.run();
     if (rotateCamera) {
@@ -183,9 +206,8 @@ void moveToFarRight(bool rotateCamera) {
   currentLinearState = movingRight;
   displayLinearMotorStatus();
   rightSwitchNotPressed = digitalRead(rightLimitSwitch);
-  
+
   while (rightSwitchNotPressed == true) {
-    
     linearStepper.run();
     if (rotateCamera) {
       rotatePlatformLeft();
