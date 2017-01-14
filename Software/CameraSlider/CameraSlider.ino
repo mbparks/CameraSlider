@@ -1,5 +1,9 @@
 #include <AccelStepper.h>
-#include <AFMotor.h>
+#include <Wire.h>
+#include <Adafruit_MotorShield.h>
+#include "utility/Adafruit_MS_PWMServoDriver.h"
+
+Adafruit_MotorShield AFMStop(0x60); // Default address, no jumpers
 
 #define stepsPerRev 200
 
@@ -28,31 +32,31 @@ enum linearStates {
 // GREEN   - M1 INSIDE    D3
 // RED     + M2 INSIDE    D1
 // BLUE    - M2 OUTSIDE   D4
-AF_Stepper linearMotor(stepsPerRev, 1);
+Adafruit_StepperMotor *linearMotor = AFMStop.getStepper(stepsPerRev, 1);
 
 // RotateMotor
 // BLACK   + M3 OUTSIDE   D5
 // GREEN   - M3 INSIDE    D7
 // RED     + M4 INSIDE    D0
 // BLUE    - M4 OUTSIDE   D6
-AF_Stepper rotateMotor(stepsPerRev, 2);
+Adafruit_StepperMotor *rotateMotor = AFMStop.getStepper(stepsPerRev, 2);
 
 
 
 // you can change these to DOUBLE or INTERLEAVE or MICROSTEP!
 // wrappers for the first motor!
 void forwardstep1() {
-  linearMotor.onestep(FORWARD, DOUBLE);
+  linearMotor->onestep(FORWARD, DOUBLE);
 }
 void backwardstep1() {
-  linearMotor.onestep(BACKWARD, DOUBLE);
+  linearMotor->onestep(BACKWARD, DOUBLE);
 }
 // wrappers for the second motor!
 void forwardstep2() {
-  rotateMotor.onestep(FORWARD, DOUBLE);
+  rotateMotor->onestep(FORWARD, DOUBLE);
 }
 void backwardstep2() {
-  rotateMotor.onestep(BACKWARD, DOUBLE);
+  rotateMotor->onestep(BACKWARD, DOUBLE);
 }
 
 AccelStepper linearStepper(forwardstep1, backwardstep1);
@@ -62,8 +66,8 @@ linearStates currentLinearState = unknown;
 
 bool leftSwitchNotPressed = true;
 bool rightSwitchNotPressed = true;
-bool redButtonNotPressed = true;
-bool blackButtonNotPressed = true;
+bool redButtonPressed = false;
+bool blackButtonPressed = false;
 
 static bool doRotate = true;
 static bool doNotRotate = false;
@@ -72,6 +76,8 @@ static bool doNotRotate = false;
 void setup() {
   Serial.begin(9600);
   Serial.println("Camera Motion Project");
+
+  AFMStop.begin(); // Start the top shield
 
   linearStepper.setMaxSpeed(500.0);
   linearStepper.setAcceleration(800.0);
@@ -85,6 +91,7 @@ void setup() {
   pinMode(rightLimitSwitch, INPUT_PULLUP);
   pinMode(blackButton, INPUT_PULLUP);
   pinMode(redButton, INPUT_PULLUP);
+  
 
   Serial.println("Homing the linear motion platform...");
   moveToFarLeft(doNotRotate);
@@ -107,15 +114,20 @@ void setup() {
 
 
 void loop() {
-  blackButtonNotPressed = digitalRead(blackButton);
-  redButtonNotPressed = digitalRead(redButton);
-  while (blackButtonNotPressed == true && redButtonNotPressed == true) {
-    //displayLinearMotorStatus();
-    blackButtonNotPressed = digitalRead(blackButton);
-    redButtonNotPressed = digitalRead(redButton);
+  blackButtonPressed = digitalRead(blackButton);
+  redButtonPressed = digitalRead(redButton);
+  Serial.print("B: ");
+  Serial.println(blackButtonPressed);
+  //Serial.print("  R: ");
+  //Serial.println(redButtonPressed);
+  while (blackButtonPressed == false) { // && redButtonPressed == false) {
+    blackButtonPressed = digitalRead(blackButton);
+    //redButtonPressed = digitalRead(redButton);
+    Serial.print("B: ");
+    Serial.println(blackButtonPressed);
   }
 
-  if (blackButtonNotPressed == false) {
+  if (blackButtonPressed == true) {
     switch (currentLinearState) {
       case farLeft:
         moveToFarRight(doNotRotate);
@@ -132,22 +144,23 @@ void loop() {
     }
   }
 
-  if (redButtonNotPressed == false) {
-    switch (currentLinearState) {
-      case farLeft:
-        moveToFarRight(doRotate);
-        delay(delayVal);
-        break;
+  
+  //if (redButtonPressed == true) {
+  //  switch (currentLinearState) {
+  //   case farLeft:
+  //      moveToFarRight(doRotate);
+   //     delay(delayVal);
+   //     break;
 
-      case farRight:
-        moveToFarLeft(doRotate);
-        delay(delayVal);
-        break;
+  //    case farRight:
+  //      moveToFarLeft(doRotate);
+  //      delay(delayVal);
+   //     break;
 
-      default:
-        break;
-    }
-  }
+   //   default:
+   //     break;
+   // }
+  //}
 }
 
 
@@ -194,6 +207,8 @@ void moveToFarLeft(bool rotateCamera) {
     leftSwitchNotPressed = digitalRead(leftLimitSwitch);
   }
 
+  linearMotor->release();
+  rotateMotor->release();
   currentLinearState = farLeft;
   linearStepper.moveTo(linearStepper.currentPosition());
   displayLinearMotorStatus();
@@ -215,6 +230,8 @@ void moveToFarRight(bool rotateCamera) {
     rightSwitchNotPressed = digitalRead(rightLimitSwitch);
   }
 
+  linearMotor->release();
+  rotateMotor->release();
   currentLinearState = farRight;
   linearStepper.moveTo(linearStepper.currentPosition());
   displayLinearMotorStatus();
