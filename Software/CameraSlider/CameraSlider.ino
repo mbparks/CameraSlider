@@ -91,7 +91,7 @@ void setup() {
   pinMode(rightLimitSwitch, INPUT_PULLUP);
   pinMode(blackButton, INPUT_PULLUP);
   pinMode(redButton, INPUT_PULLUP);
-  
+
 
   Serial.println("Homing the linear motion platform...");
   moveToFarLeft(doNotRotate);
@@ -116,15 +116,10 @@ void setup() {
 void loop() {
   blackButtonPressed = digitalRead(blackButton);
   redButtonPressed = digitalRead(redButton);
-  Serial.print("B: ");
-  Serial.println(blackButtonPressed);
-  //Serial.print("  R: ");
-  //Serial.println(redButtonPressed);
-  while (blackButtonPressed == false) { // && redButtonPressed == false) {
+  
+  while (blackButtonPressed == false && redButtonPressed == false) {
     blackButtonPressed = digitalRead(blackButton);
-    //redButtonPressed = digitalRead(redButton);
-    Serial.print("B: ");
-    Serial.println(blackButtonPressed);
+    redButtonPressed = digitalRead(redButton);
   }
 
   if (blackButtonPressed == true) {
@@ -144,24 +139,24 @@ void loop() {
     }
   }
 
-  
-  //if (redButtonPressed == true) {
-  //  switch (currentLinearState) {
-  //   case farLeft:
-  //      moveToFarRight(doRotate);
-   //     delay(delayVal);
-   //     break;
 
-  //    case farRight:
-  //      moveToFarLeft(doRotate);
-  //      delay(delayVal);
-   //     break;
+  if (redButtonPressed == true) {
+    switch (currentLinearState) {
+      case farLeft:
+        moveToFarRight(doRotate);
+        delay(delayVal);
+        break;
 
-   //   default:
-   //     break;
-   // }
-  //}
-}
+      case farRight:
+        moveToFarLeft(doRotate);
+        delay(delayVal);
+        break;
+
+      default:
+        break;
+    }
+  }
+} 
 
 
 
