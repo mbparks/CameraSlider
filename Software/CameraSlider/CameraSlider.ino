@@ -12,8 +12,8 @@ Adafruit_MotorShield AFMStop(0x60); // Default address, no jumpers
 #define farRightLinearPosition -1000000
 
 //For Rotate Motion Stepper
-#define farLeftRotatePosition -10000000
-#define farRightRotatePosition 1000000
+#define farLeftRotatePosition 10000000
+#define farRightRotatePosition -10000000
 
 #define delayVal 1000
 
@@ -53,10 +53,10 @@ void backwardstep1() {
 }
 // wrappers for the second motor!
 void forwardstep2() {
-  rotateMotor->onestep(FORWARD, DOUBLE);
+  rotateMotor->onestep(FORWARD, MICROSTEP);
 }
 void backwardstep2() {
-  rotateMotor->onestep(BACKWARD, DOUBLE);
+  rotateMotor->onestep(BACKWARD, MICROSTEP);
 }
 
 AccelStepper linearStepper(forwardstep1, backwardstep1);
@@ -83,8 +83,8 @@ void setup() {
   linearStepper.setAcceleration(800.0);
   linearStepper.moveTo(farLeftLinearPosition);
 
-  rotateStepper.setMaxSpeed(50.0);
-  rotateStepper.setAcceleration(50.0);
+  rotateStepper.setMaxSpeed(10.75);
+  rotateStepper.setAcceleration(0.75);
   rotateStepper.moveTo(farRightRotatePosition);
 
   pinMode(leftLimitSwitch, INPUT_PULLUP);
